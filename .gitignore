@@ -1,0 +1,11 @@
+node_modules/
+.next/
+src/
+next.config.js
+package.json
+package-lock.json
+postcss.config.js
+tailwind.config.ts
+tsconfig.json
+SETUP.md
+README.md

@@ -1,0 +1,1293 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YT Comment AI</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#0a0a0f;color:#e2e2f0;font-family:'Manrope',sans-serif;min-height:100vh}
+  ::-webkit-scrollbar{width:5px}
+  ::-webkit-scrollbar-track{background:#0a0a0f}
+  ::-webkit-scrollbar-thumb{background:#2d2d45;border-radius:3px}
+  ::-webkit-scrollbar-thumb:hover{background:#6366f1}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .fade-in{animation:fadeIn .28s ease forwards}
+  .spin{animation:spin .8s linear infinite}
+  input[type=range]{-webkit-appearance:none;width:100%;height:4px;border-radius:2px;background:#2d2d45;outline:none}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:#6366f1;cursor:pointer}
+  input[type=checkbox]{accent-color:#6366f1;width:15px;height:15px;cursor:pointer}
+  select,input,textarea{color-scheme:dark}
+  .page{display:none}.page.active{display:block}
+  .toast{position:fixed;bottom:24px;right:24px;z-index:999;background:#14141f;border:1px solid #2d2d45;color:#e2e2f0;padding:12px 18px;border-radius:12px;font-size:13px;font-weight:500;opacity:0;transform:translateY(8px);transition:.25s ease;pointer-events:none}
+  .toast.show{opacity:1;transform:translateY(0)}
+  .toast.success{border-color:#10b981;color:#10b981}
+  .toast.error{border-color:#ef4444;color:#ef4444}
+  .line-clamp-2{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .btn{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;transition:.15s ease;border:none;outline:none}
+  .btn:hover{opacity:.88}.btn:active{transform:scale(.97)}
+  .btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+  .btn-primary{background:#6366f1;color:#fff}
+  .btn-ghost{background:#1e1e30;color:#a5b4fc}
+  .btn-subtle{background:rgba(99,102,241,.12);color:#818cf8}
+  .btn-shorts{background:linear-gradient(135deg,#ff0050,#ff6b35);color:#fff}
+  .card{background:#14141f;border:1px solid #1e1e30;border-radius:14px}
+  .input-field{width:100%;padding:10px 14px;background:#0a0a0f;border:1px solid #2d2d45;border-radius:10px;color:#e2e2f0;font-size:13px;font-family:inherit;outline:none;transition:.15s}
+  .input-field:focus{border-color:#6366f1;box-shadow:0 0 0 2px rgba(99,102,241,.15)}
+  .input-field::placeholder{color:#444460}
+  .status-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600}
+  .status-idle{background:rgba(107,114,128,.15);color:#9ca3af}
+  .status-transcribing{background:rgba(245,158,11,.15);color:#f59e0b}
+  .status-done{background:rgba(16,185,129,.15);color:#10b981}
+  .status-error{background:rgba(239,68,68,.15);color:#ef4444}
+  .src-badge{display:inline-flex;align-items:center;gap:3px;padding:1px 7px;border-radius:99px;font-size:10px;font-weight:600}
+  .src-subtitles{background:rgba(16,185,129,.12);color:#6ee7b7}
+  .src-description{background:rgba(245,158,11,.12);color:#fbbf24}
+  .src-title{background:rgba(107,114,128,.12);color:#9ca3af}
+  .shorts-badge{display:inline-flex;align-items:center;gap:3px;padding:1px 7px;border-radius:99px;font-size:10px;font-weight:700;background:linear-gradient(135deg,rgba(255,0,80,.2),rgba(255,107,53,.2));color:#ff6b35}
+  .nav-link{display:flex;align-items:center;gap:5px;padding:7px 12px;border-radius:8px;font-size:13px;font-weight:600;color:#6b7280;text-decoration:none;transition:.15s;cursor:pointer;border:none;background:none}
+  .nav-link:hover{color:#e2e2f0;background:rgba(255,255,255,.05)}
+  .nav-link.active{color:#818cf8;background:rgba(99,102,241,.15)}
+  table{width:100%;border-collapse:collapse}
+  th{text-align:left;padding:10px 14px;font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid #1e1e30}
+  td{padding:10px 14px;border-bottom:1px solid #0f0f1a;vertical-align:middle}
+  tr:hover td{background:rgba(255,255,255,.015)}
+  tr.selected td{background:rgba(99,102,241,.04)}
+  .progress-bar{height:3px;background:#1e1e30;border-radius:2px;overflow:hidden}
+  .progress-fill{height:100%;background:linear-gradient(90deg,#6366f1,#818cf8);border-radius:2px;transition:.3s ease}
+  .tab-btn{padding:7px 16px;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;transition:.15s;border:none;color:#6b7280;background:none}
+  .tab-btn.active{background:#6366f1;color:#fff}
+  .tab-btn.active-shorts{background:linear-gradient(135deg,#ff0050,#ff6b35);color:#fff}
+  .tab-btn:not(.active):not(.active-shorts):hover{color:#e2e2f0;background:rgba(255,255,255,.05)}
+  /* Search content type toggle */
+  .type-toggle{display:flex;gap:0;background:#0a0a0f;border:1px solid #2d2d45;border-radius:10px;padding:3px}
+  .type-btn{flex:1;padding:8px 14px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:.15s;border:none;color:#6b7280;background:none;display:flex;align-items:center;justify-content:center;gap:6px}
+  .type-btn.active-video{background:#1e1e30;color:#a5b4fc}
+  .type-btn.active-shorts{background:linear-gradient(135deg,#ff0050,#ff6b35);color:#fff}
+  .type-btn.active-hashtag{background:linear-gradient(135deg,#0ea5e9,#6366f1);color:#fff}
+  /* ── RESPONSIVE ──────────────────────────────────────────── */
+  @media (max-width:640px){
+    #legend{display:none!important}
+    main{padding:14px 10px!important}
+    .nav-label{display:none}
+    .nav-link{padding:7px 8px}
+    #comments-grid{grid-template-columns:1fr!important}
+    .toast{left:10px!important;right:10px!important;bottom:10px!important}
+    .key-row{flex-wrap:wrap}
+    .key-row .btn{flex:1;min-width:80px;justify-content:center}
+    .prov-tabs{flex-wrap:wrap!important}
+    .prov-tabs .type-btn{flex:none!important;width:calc(50% - 4px)!important;font-size:11px}
+    #action-bar{flex-direction:column!important;align-items:stretch!important}
+    #action-bar .btn{width:100%;justify-content:center}
+    #action-bar .btn span[style]{display:none!important}
+    .results-header{flex-direction:column;align-items:flex-start!important}
+    #tab-table .card{border-radius:10px!important}
+    table{font-size:11px}
+    th,td{padding:8px 10px}
+  }
+  @media (max-width:400px){
+    #header-logo-text{display:none}
+    .type-btn{font-size:12px;padding:7px 10px}
+    th,td{padding:6px 8px;font-size:10px}
+  }
+  /* Bottom mobile nav */
+  #mobile-nav{display:none}
+  @media (max-width:640px){
+    body{padding-bottom:60px}
+    #mobile-nav{display:flex;position:fixed;bottom:0;left:0;right:0;z-index:100;background:#14141f;border-top:1px solid #1e1e30;height:56px;align-items:stretch}
+    #mobile-nav button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border:none;background:none;color:#6b7280;cursor:pointer;font-size:10px;font-weight:600;transition:.15s;padding:6px 4px}
+    #mobile-nav button svg{flex-shrink:0}
+    #mobile-nav button.active{color:#818cf8}
+    #mobile-nav button.active svg{stroke:#818cf8}
+    .toast{bottom:66px!important}
+  }
+</style>
+</head>
+<body>
+
+<div id="toast" class="toast"></div>
+
+<!-- LEGEND -->
+<div id="legend" style="position:fixed;bottom:24px;left:20px;z-index:90;background:#14141f;border:1px solid #1e1e30;border-radius:12px;padding:10px 14px;font-size:11px;color:#6b7280;display:flex;flex-direction:column;gap:5px">
+  <div style="font-weight:700;color:#4b5563;margin-bottom:2px;font-size:10px;text-transform:uppercase;letter-spacing:.05em">Источник текста</div>
+  <div style="display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:#10b981;display:inline-block;flex-shrink:0"></span>📝 Субтитры</div>
+  <div style="display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:#f59e0b;display:inline-block;flex-shrink:0"></span>📄 Нет субтитров · из описания</div>
+  <div style="display:flex;align-items:center;gap:6px"><span style="width:8px;height:8px;border-radius:50%;background:#6b7280;display:inline-block;flex-shrink:0"></span>💬 Нет субтитров · из названия</div>
+</div>
+
+<!-- HEADER -->
+<header style="background:#14141f;border-bottom:1px solid #1e1e30;position:sticky;top:0;z-index:50">
+  <div style="max-width:1100px;margin:0 auto;padding:0 16px;height:54px;display:flex;align-items:center;justify-content:space-between">
+    <button onclick="navigate('search')" style="display:flex;align-items:center;gap:8px;font-size:17px;font-weight:800;color:#fff;background:none;border:none;cursor:pointer">
+      <div style="width:30px;height:30px;background:#6366f1;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px">💬</div>
+      <span id="header-logo-text">YT Comment <span style="color:#818cf8;margin-left:4px">AI</span></span>
+    </button>
+    <nav style="display:flex;align-items:center;gap:2px">
+      <button id="nav-search" class="nav-link" onclick="navigate('search')">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <span class="nav-label">Поиск</span>
+      </button>
+      <button id="nav-results" class="nav-link" onclick="navigate('results')">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+        <span class="nav-label">Результаты</span>
+      </button>
+      <button id="nav-settings" class="nav-link" onclick="navigate('settings')">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+        <span class="nav-label">Настройки</span>
+      </button>
+      <div id="api-status-dot" title="Нужно добавить API ключи" style="width:9px;height:9px;border-radius:50%;background:#ef4444;margin-left:8px;transition:.3s;flex-shrink:0"></div>
+    </nav>
+  </div>
+</header>
+
+<main style="max-width:1100px;margin:0 auto;padding:28px 16px">
+
+<!-- PAGE: SETTINGS -->
+<div id="page-settings" class="page">
+  <div style="max-width:600px;margin:0 auto" class="fade-in">
+    <div id="settings-first-notice" style="display:none;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.2);border-radius:12px;padding:12px 16px;margin-bottom:20px;font-size:13px;color:#f59e0b">
+      ⚠️ Сначала добавьте API-ключи, чтобы начать работу
+    </div>
+    <h1 style="font-size:22px;font-weight:800;color:#fff;margin-bottom:4px">Настройки</h1>
+    <p style="font-size:13px;color:#6b7280;margin-bottom:24px">Ключи хранятся только в вашем браузере (localStorage)</p>
+
+    <div class="card" style="padding:20px;margin-bottom:14px">
+      <div style="margin-bottom:14px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:3px">
+          <span style="font-size:15px;font-weight:700;color:#fff">YouTube Data API v3</span>
+          <span id="yt-saved-icon" style="display:none;color:#10b981;font-size:13px">✓ Сохранён</span>
+        </div>
+        <p style="font-size:12px;color:#4b5563">Получите на <span style="color:#818cf8">console.cloud.google.com</span> → APIs & Services → Credentials</p>
+      </div>
+      <div class="key-row" style="display:flex;gap:8px;margin-bottom:8px">
+        <div style="position:relative;flex:1;min-width:0">
+          <input id="yt-key-input" class="input-field" type="password" placeholder="AIzaSy..." style="padding-right:40px">
+          <button onclick="toggleVis('yt-key-input')" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:#4b5563;cursor:pointer;font-size:15px">👁</button>
+        </div>
+        <button class="btn btn-primary" onclick="saveKey('youtube')">Сохранить</button>
+        <button class="btn btn-ghost" onclick="testKey('youtube')" id="yt-test-btn">Проверить</button>
+      </div>
+      <div id="yt-test-result" style="display:none"></div>
+    </div>
+
+    <!-- AI PROVIDER CARD -->
+    <div class="card" style="padding:20px;margin-bottom:14px">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+        <span style="font-size:15px;font-weight:700;color:#fff">AI для генерации</span>
+        <span id="ai-saved-icon" style="display:none;color:#10b981;font-size:13px">✓ Сохранён</span>
+      </div>
+
+      <!-- Provider tabs -->
+      <div class="prov-tabs" style="display:flex;gap:4px;margin-bottom:14px;background:#0a0a0f;border-radius:10px;padding:3px">
+        <button id="prov-gemini"  class="type-btn active-video" style="border-radius:8px;font-size:12px" onclick="setProvider('gemini')">
+          <img src="https://www.gstatic.com/lamda/images/gemini_sparkle_v002_d4735304ff6292a690345.svg" style="width:14px;height:14px" onerror="this.style.display='none'"> Gemini
+        </button>
+        <button id="prov-openai"  class="type-btn" style="border-radius:8px;font-size:12px" onclick="setProvider('openai')">
+          🤖 OpenAI
+        </button>
+        <button id="prov-claude"  class="type-btn" style="border-radius:8px;font-size:12px" onclick="setProvider('claude')">
+          ✦ Claude
+        </button>
+        <button id="prov-custom"  class="type-btn" style="border-radius:8px;font-size:12px" onclick="setProvider('custom')">
+          ⚙️ Custom
+        </button>
+      </div>
+
+      <!-- Provider hint -->
+      <div id="ai-hint" style="font-size:12px;color:#4b5563;margin-bottom:10px"></div>
+
+      <!-- Custom URL (only for custom) -->
+      <div id="custom-url-wrap" style="display:none;margin-bottom:8px">
+        <label style="font-size:11px;color:#4b5563;display:block;margin-bottom:4px">URL эндпоинта (OpenAI-совместимый)</label>
+        <input id="custom-url-input" class="input-field" type="text" placeholder="https://api.example.com/v1/chat/completions">
+      </div>
+
+      <!-- Model (openai/claude/custom) -->
+      <div id="ai-model-wrap" style="display:none;margin-bottom:8px">
+        <label style="font-size:11px;color:#4b5563;display:block;margin-bottom:4px">Модель</label>
+        <input id="ai-model-input" class="input-field" type="text" placeholder="gpt-4o-mini">
+      </div>
+
+      <!-- API Key -->
+      <div class="key-row" style="display:flex;gap:8px;margin-bottom:8px">
+        <div style="position:relative;flex:1;min-width:0">
+          <input id="ai-key-input" class="input-field" type="password" placeholder="Вставьте API ключ..." style="padding-right:40px">
+          <button onclick="toggleVis('ai-key-input')" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:#4b5563;cursor:pointer;font-size:15px">👁</button>
+        </div>
+        <button class="btn btn-primary" onclick="saveAiKey()">Сохранить</button>
+        <button class="btn btn-ghost" id="ai-test-btn" onclick="testAiKey()">Проверить</button>
+      </div>
+      <div id="ai-test-result" style="display:none"></div>
+    </div>
+
+    <div class="card" style="padding:20px;margin-bottom:14px">
+      <div style="margin-bottom:12px">
+        <span style="font-size:15px;font-weight:700;color:#fff">Telegram-ссылка</span>
+        <p style="font-size:12px;color:#4b5563;margin-top:2px">Будет органично вставлена в каждый комментарий</p>
+      </div>
+      <div class="key-row" style="display:flex;gap:8px">
+        <input id="tg-input" class="input-field" type="text" placeholder="@username" style="flex:1;min-width:0">
+        <button class="btn btn-primary" onclick="saveTg()">Сохранить</button>
+      </div>
+    </div>
+
+    <div class="card" style="padding:20px">
+      <div style="margin-bottom:12px">
+        <span style="font-size:15px;font-weight:700;color:#fff">Тема подводки</span>
+        <p style="font-size:12px;color:#4b5563;margin-top:2px">Опиши что нужно упомянуть в комментарии как личный опыт. ИИ сам вставит это органично в текст.</p>
+      </div>
+      <textarea id="prompt-input" class="input-field" rows="3" placeholder="Например: упомянуть ИИ и автоматизацию холодных звонков, стоимость лида упала на 30-40%" style="resize:none;margin-bottom:8px"></textarea>
+      <button class="btn btn-primary" onclick="savePrompt()">Сохранить</button>
+    </div>
+  </div>
+</div>
+
+<!-- PAGE: SEARCH -->
+<div id="page-search" class="page">
+  <div style="max-width:580px;margin:0 auto" class="fade-in">
+    <div style="text-align:center;margin-bottom:32px">
+      <div style="width:64px;height:64px;background:#1e1e30;border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:30px;margin:0 auto 14px">💬</div>
+      <h1 style="font-size:26px;font-weight:800;color:#fff;margin-bottom:6px">YouTube Comment <span style="color:#818cf8">AI</span></h1>
+      <p style="color:#6b7280;font-size:14px">Находи видео по нише и генерируй умные комментарии</p>
+    </div>
+
+    <!-- Content type toggle: Видео / Shorts -->
+    <div style="margin-bottom:14px">
+      <label style="font-size:11px;color:#4b5563;display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em">Тип контента</label>
+      <div class="type-toggle">
+        <button id="type-video-btn" class="type-btn active-video" onclick="setContentType('video')">
+          <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+          Видео
+        </button>
+        <button id="type-shorts-btn" class="type-btn" onclick="setContentType('shorts')">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M17.77 10.32l-1.2-.5L18 9c.93-.34 1.4-1.38 1.05-2.31-.34-.93-1.38-1.4-2.31-1.05l-5.22 1.9A3.997 3.997 0 008 12c0 2.21 1.79 4 4 4s4-1.79 4-4c0-.5-.1-.97-.27-1.41l1.04-.27zM12 14c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/><path d="M9 3H6.5C5.12 3 4 4.12 4 5.5S5.12 8 6.5 8H9V3zM18 16h-2.5v5H18c1.38 0 2.5-1.12 2.5-2.5S19.38 16 18 16z"/></svg>
+          Shorts
+          <span style="font-size:10px;background:linear-gradient(135deg,#ff0050,#ff6b35);-webkit-background-clip:text;-webkit-text-fill-color:transparent;font-weight:800">⚡</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Search mode toggle -->
+    <div style="margin-bottom:10px">
+      <label style="font-size:11px;color:#4b5563;display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:.05em">Режим поиска</label>
+      <div class="type-toggle">
+        <button id="mode-keyword-btn" class="type-btn active-video" onclick="setSearchMode('keyword')">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          По запросу
+        </button>
+        <button id="mode-hashtag-btn" class="type-btn" onclick="setSearchMode('hashtag')">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>
+          По хештегу
+        </button>
+      </div>
+    </div>
+
+    <!-- Hashtag hint -->
+    <div id="hashtag-hint" style="display:none;background:rgba(14,165,233,.08);border:1px solid rgba(14,165,233,.2);border-radius:10px;padding:10px 14px;font-size:12px;color:#38bdf8;margin-bottom:10px">
+      Введи хештеги через запятую или пробел — например: <span style="font-weight:700">дизайн, ремонт, интерьер</span>. Знак # не нужен.
+    </div>
+
+    <!-- Search input -->
+    <div style="position:relative;margin-bottom:14px">
+      <span id="search-icon-wrap" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);display:flex;align-items:center;pointer-events:none">
+        <svg id="search-icon-default" width="17" height="17" fill="none" stroke="#4b5563" stroke-width="2.2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <span id="search-icon-hash" style="display:none;font-size:17px;font-weight:800;color:#0ea5e9;line-height:1">#</span>
+      </span>
+      <input id="search-query" class="input-field" type="text" placeholder="Введите нишу: ремонт квартир, обзор квартир, дизайн интерьера..." style="padding:14px 14px 14px 40px;font-size:14px;border-radius:12px" onkeydown="if(event.key==='Enter')doSearch()">
+    </div>
+
+    <!-- Filters -->
+    <div class="card" style="padding:18px;margin-bottom:14px">
+      <div style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:#6b7280;margin-bottom:14px">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+        Фильтры
+        <span id="shorts-note" style="display:none;font-size:11px;padding:2px 8px;border-radius:99px;background:linear-gradient(135deg,rgba(255,0,80,.15),rgba(255,107,53,.15));color:#ff6b35;font-weight:700">Shorts ≤ 60 сек</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
+        <div>
+          <label style="font-size:11px;color:#4b5563;display:block;margin-bottom:6px">Период</label>
+          <select id="date-filter" class="input-field">
+            <option value="today">Сегодня</option>
+            <option value="yesterday">Вчера</option>
+            <option value="week">Последняя неделя</option>
+            <option value="month" selected>Последний месяц</option>
+            <option value="3months">Последние 3 месяца</option>
+            <option value="6months">Последние 6 месяцев</option>
+            <option value="year">Последний год</option>
+            <option value="all">За всё время</option>
+          </select>
+        </div>
+        <div>
+          <label style="font-size:11px;color:#4b5563;display:block;margin-bottom:6px">Сортировка</label>
+          <select id="sort-by" class="input-field">
+            <option value="viewCount" selected>По просмотрам</option>
+            <option value="date">По дате</option>
+            <option value="rating">По рейтингу</option>
+          </select>
+        </div>
+      </div>
+      <div>
+        <label style="font-size:11px;color:#4b5563;display:flex;justify-content:space-between;margin-bottom:8px">
+          <span>Количество</span>
+          <span id="count-label" style="color:#818cf8;font-weight:700">10</span>
+        </label>
+        <input id="count-slider" type="range" min="5" max="50" step="5" value="10" oninput="document.getElementById('count-label').textContent=this.value">
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:#2d2d45;margin-top:4px"><span>5</span><span>50</span></div>
+      </div>
+    </div>
+
+    <div id="search-error" style="display:none;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);border-radius:10px;padding:12px 14px;font-size:13px;color:#ef4444;margin-bottom:12px"></div>
+
+    <button id="search-btn" class="btn btn-primary" onclick="doSearch()" style="width:100%;padding:14px;font-size:15px;border-radius:12px;justify-content:center">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <span id="search-btn-text">Найти видео</span>
+    </button>
+  </div>
+</div>
+
+<!-- PAGE: RESULTS -->
+<div id="page-results" class="page">
+  <div class="fade-in">
+    <div class="results-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:20px">
+      <div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <h1 style="font-size:20px;font-weight:800;color:#fff">Результаты поиска</h1>
+          <span id="results-type-badge" style="display:none"></span>
+        </div>
+        <p id="results-count" style="font-size:13px;color:#6b7280;margin-top:2px">Найдено 0 видео</p>
+      </div>
+      <button class="btn btn-ghost" onclick="navigate('search')" style="font-size:13px">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+        Новый поиск
+      </button>
+    </div>
+
+    <!-- Tabs -->
+    <div style="display:flex;gap:3px;padding:4px;background:#14141f;border-radius:12px;width:fit-content;margin-bottom:20px">
+      <button id="tab-table-btn" class="tab-btn active" onclick="switchTab('table')">Таблица видео</button>
+      <button id="tab-comments-btn" class="tab-btn" onclick="switchTab('comments')">
+        Комментарии
+        <span id="comments-count-badge" style="display:none;background:rgba(16,185,129,.2);color:#10b981;padding:1px 6px;border-radius:99px;font-size:11px;margin-left:4px"></span>
+      </button>
+    </div>
+
+    <!-- TABLE TAB -->
+    <div id="tab-table">
+      <div id="action-bar" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+        <button class="btn btn-ghost" onclick="toggleSelectAll()" id="select-all-btn">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/></svg>
+          Выбрать все
+        </button>
+        <button id="transcribe-btn" class="btn btn-ghost" onclick="transcribeSelected()" disabled>
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          Транскрибировать
+          <span id="transcribe-count" style="opacity:.6;font-size:12px"></span>
+        </button>
+        <button id="generate-btn" class="btn btn-primary" onclick="generateComments()" disabled>
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+          Сгенерировать комментарии
+          <span id="generate-count" style="opacity:.6;font-size:12px"></span>
+        </button>
+      </div>
+
+      <div id="progress-wrap" style="display:none;margin-bottom:14px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+          <span id="progress-text" style="font-size:13px;color:#818cf8"></span>
+          <span id="progress-pct" style="font-size:12px;color:#4b5563"></span>
+        </div>
+        <div class="progress-bar"><div id="progress-fill" class="progress-fill" style="width:0%"></div></div>
+      </div>
+
+      <div class="card" style="overflow-x:auto">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:36px"><input type="checkbox" id="header-checkbox" onchange="toggleSelectAll()"></th>
+              <th>Видео</th>
+              <th>Канал</th>
+              <th>Просмотры</th>
+              <th>Дата</th>
+              <th>Длина</th>
+              <th>Статус / Источник</th>
+            </tr>
+          </thead>
+          <tbody id="videos-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- COMMENTS TAB -->
+    <div id="tab-comments" style="display:none">
+      <div id="comments-empty" style="text-align:center;padding:60px 20px;color:#4b5563">
+        <div style="font-size:40px;margin-bottom:12px;opacity:.4">💬</div>
+        <p style="font-size:15px;margin-bottom:6px">Комментарии ещё не сгенерированы</p>
+        <p style="font-size:13px">Выберите видео и нажмите «Сгенерировать комментарии»</p>
+        <button class="btn btn-ghost" onclick="switchTab('table')" style="margin-top:16px">Перейти к таблице</button>
+      </div>
+      <div id="comments-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(440px,1fr));gap:14px"></div>
+    </div>
+  </div>
+</div>
+
+<!-- EMPTY -->
+<div id="page-empty" class="page" style="text-align:center;padding:80px 20px">
+  <div style="font-size:48px;margin-bottom:16px">🔍</div>
+  <h2 style="font-size:20px;font-weight:700;color:#fff;margin-bottom:8px">Нет результатов</h2>
+  <p style="color:#4b5563;margin-bottom:24px">Сначала выполните поиск</p>
+  <button class="btn btn-primary" onclick="navigate('search')">Перейти к поиску</button>
+</div>
+
+</main>
+
+<!-- MOBILE BOTTOM NAV -->
+<div id="mobile-nav">
+  <button id="mnav-search" onclick="navigate('search')">
+    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+    Поиск
+  </button>
+  <button id="mnav-results" onclick="navigate('results')">
+    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+    Результаты
+  </button>
+  <button id="mnav-settings" onclick="navigate('settings')">
+    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>
+    Настройки
+  </button>
+</div>
+
+<script>
+// ── STATE ──────────────────────────────────────────────────
+const S = {
+  videos: [],
+  selected: new Set(),
+  contentType: 'video',
+  searchMode: 'keyword',
+  keys: {
+    youtubeApiKey: '',
+    aiProvider:    'gemini',   // gemini | openai | claude | custom
+    aiApiKey:      '',
+    aiModel:       '',
+    customUrl:     '',
+    telegramLink:  '@dgnbert',
+    promptTemplate:'',
+  },
+}
+
+// ── STORAGE ────────────────────────────────────────────────
+const LS = { get: k => localStorage.getItem(k)??'', set: (k,v) => localStorage.setItem(k,v) }
+
+function loadKeys() {
+  S.keys.youtubeApiKey  = LS.get('ytc_yt_key')
+  S.keys.aiProvider     = LS.get('ytc_ai_provider') || 'gemini'
+  S.keys.aiApiKey       = LS.get('ytc_ai_key')
+  S.keys.aiModel        = LS.get('ytc_ai_model')
+  S.keys.customUrl      = LS.get('ytc_custom_url')
+  S.keys.telegramLink   = LS.get('ytc_tg') || '@dgnbert'
+  S.keys.promptTemplate = LS.get('ytc_prompt')
+}
+function saveVideos() { try { LS.set('ytc_videos', JSON.stringify(S.videos)) } catch {} }
+function loadVideos() { try { return JSON.parse(LS.get('ytc_videos')||'[]') } catch { return [] } }
+
+// ── ROUTING ────────────────────────────────────────────────
+function navigate(page) {
+  ['settings','search','results','empty'].forEach(p => {
+    document.getElementById('page-'+p).classList.remove('active')
+    const n = document.getElementById('nav-'+p)
+    if (n) n.classList.remove('active')
+    const mn = document.getElementById('mnav-'+p)
+    if (mn) mn.classList.remove('active')
+  })
+  const target = page === 'results' && S.videos.length === 0 ? 'empty' : page
+  document.getElementById('page-'+target).classList.add('active')
+  const n = document.getElementById('nav-'+page)
+  if (n) n.classList.add('active')
+  const mn = document.getElementById('mnav-'+page)
+  if (mn) mn.classList.add('active')
+  window.scrollTo(0,0)
+}
+
+// ── INIT ───────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  loadKeys()
+  S.videos = loadVideos()
+  document.getElementById('yt-key-input').value  = S.keys.youtubeApiKey
+  document.getElementById('ai-key-input').value  = S.keys.aiApiKey
+  document.getElementById('tg-input').value      = S.keys.telegramLink
+  document.getElementById('prompt-input').value  = S.keys.promptTemplate
+  if (S.keys.youtubeApiKey) document.getElementById('yt-saved-icon').style.display = 'inline'
+  if (S.keys.aiApiKey)      document.getElementById('ai-saved-icon').style.display  = 'inline'
+  setProvider(S.keys.aiProvider)
+  updateDot()
+  if (!S.keys.youtubeApiKey || !S.keys.aiApiKey) {
+    document.getElementById('settings-first-notice').style.display = 'block'
+    navigate('settings')
+  } else { navigate('search') }
+})
+
+function updateDot() {
+  const ok = S.keys.youtubeApiKey && S.keys.aiApiKey
+  const d = document.getElementById('api-status-dot')
+  d.style.background = ok ? '#10b981' : '#ef4444'
+  d.title = ok ? 'API ключи настроены' : 'Нужно добавить API ключи'
+}
+
+// ── SEARCH MODE TOGGLE ────────────────────────────────────
+function updateSearchBtnLabel() {
+  const el = document.getElementById('search-btn-text')
+  if (!el) return
+  if (S.contentType === 'shorts') el.textContent = 'Найти Shorts'
+  else if (S.searchMode === 'hashtag') el.textContent = 'Найти по хештегу'
+  else el.textContent = 'Найти видео'
+}
+
+function setSearchMode(mode) {
+  S.searchMode = mode
+  const kBtn = document.getElementById('mode-keyword-btn')
+  const hBtn = document.getElementById('mode-hashtag-btn')
+  const hint = document.getElementById('hashtag-hint')
+  const iconDefault = document.getElementById('search-icon-default')
+  const iconHash    = document.getElementById('search-icon-hash')
+  const input = document.getElementById('search-query')
+  if (mode === 'keyword') {
+    kBtn.className = 'type-btn active-video'
+    hBtn.className = 'type-btn'
+    hint.style.display = 'none'
+    iconDefault.style.display = 'block'
+    iconHash.style.display = 'none'
+    input.placeholder = 'Введите нишу: ремонт квартир, обзор квартир, дизайн интерьера...'
+  } else {
+    kBtn.className = 'type-btn'
+    hBtn.className = 'type-btn active-hashtag'
+    hint.style.display = 'block'
+    iconDefault.style.display = 'none'
+    iconHash.style.display = 'block'
+    input.placeholder = 'дизайн, ремонт, интерьер...'
+    input.focus()
+  }
+  updateSearchBtnLabel()
+}
+
+// ── CONTENT TYPE TOGGLE ────────────────────────────────────
+function setContentType(type) {
+  S.contentType = type
+  const vBtn = document.getElementById('type-video-btn')
+  const sBtn = document.getElementById('type-shorts-btn')
+  const note = document.getElementById('shorts-note')
+  const sbtn = document.getElementById('search-btn-text')
+  if (type === 'video') {
+    vBtn.className = 'type-btn active-video'
+    sBtn.className = 'type-btn'
+    note.style.display = 'none'
+    document.getElementById('search-btn').className = 'btn btn-primary'
+  } else {
+    vBtn.className = 'type-btn'
+    sBtn.className = 'type-btn active-shorts'
+    note.style.display = 'inline-flex'
+    document.getElementById('search-btn').className = 'btn btn-shorts'
+  }
+  updateSearchBtnLabel()
+}
+
+// ── SETTINGS ───────────────────────────────────────────────
+function toggleVis(id) {
+  const el = document.getElementById(id)
+  el.type = el.type === 'password' ? 'text' : 'password'
+}
+
+const PROVIDERS = {
+  gemini: {
+    label: 'Google Gemini',
+    placeholder: 'AIzaSy... или любой другой формат',
+    hint: 'Получите на <a href="https://aistudio.google.com" target="_blank" style="color:#818cf8">aistudio.google.com</a> → Get API Key',
+    model: '',
+    modelPlaceholder: '',
+  },
+  openai: {
+    label: 'OpenAI',
+    placeholder: 'sk-...',
+    hint: 'Получите на <a href="https://platform.openai.com/api-keys" target="_blank" style="color:#818cf8">platform.openai.com</a> → API Keys',
+    model: 'gpt-4o-mini',
+    modelPlaceholder: 'gpt-4o-mini / gpt-4o / gpt-3.5-turbo',
+  },
+  claude: {
+    label: 'Anthropic Claude',
+    placeholder: 'sk-ant-...',
+    hint: 'Получите на <a href="https://console.anthropic.com" target="_blank" style="color:#818cf8">console.anthropic.com</a> → API Keys',
+    model: 'claude-haiku-4-5-20251001',
+    modelPlaceholder: 'claude-haiku-4-5-20251001 / claude-sonnet-4-6',
+  },
+  custom: {
+    label: 'Custom (OpenAI-совместимый)',
+    placeholder: 'sk-... или любой ключ',
+    hint: 'Любой сервис с OpenAI-совместимым API (DeepSeek, Groq, Mistral, Ollama и др.)',
+    model: '',
+    modelPlaceholder: 'название модели',
+  },
+}
+
+function setProvider(p) {
+  S.keys.aiProvider = p
+  LS.set('ytc_ai_provider', p)
+  const cfg = PROVIDERS[p]
+  // Update tabs
+  Object.keys(PROVIDERS).forEach(k => {
+    const btn = document.getElementById('prov-'+k)
+    if (btn) btn.className = 'type-btn' + (k === p ? ' active-video' : '')
+  })
+  // Update hint
+  document.getElementById('ai-hint').innerHTML = cfg.hint
+  // Update placeholder
+  document.getElementById('ai-key-input').placeholder = cfg.placeholder
+  // Show/hide model
+  const modelWrap = document.getElementById('ai-model-wrap')
+  const modelInput = document.getElementById('ai-model-input')
+  if (cfg.model !== undefined && p !== 'gemini') {
+    modelWrap.style.display = 'block'
+    modelInput.placeholder = cfg.modelPlaceholder
+    if (!modelInput.value && cfg.model) modelInput.value = cfg.model
+  } else {
+    modelWrap.style.display = 'none'
+  }
+  // Show/hide custom URL
+  document.getElementById('custom-url-wrap').style.display = p === 'custom' ? 'block' : 'none'
+  if (p === 'custom' && S.keys.customUrl) document.getElementById('custom-url-input').value = S.keys.customUrl
+}
+
+function saveAiKey() {
+  S.keys.aiApiKey   = document.getElementById('ai-key-input').value.trim()
+  S.keys.aiModel    = document.getElementById('ai-model-input')?.value.trim() || ''
+  S.keys.customUrl  = document.getElementById('custom-url-input')?.value.trim() || ''
+  LS.set('ytc_ai_key',     S.keys.aiApiKey)
+  LS.set('ytc_ai_model',   S.keys.aiModel)
+  LS.set('ytc_custom_url', S.keys.customUrl)
+  document.getElementById('ai-saved-icon').style.display = S.keys.aiApiKey ? 'inline' : 'none'
+  document.getElementById('ai-test-result').style.display = 'none'
+  updateDot()
+  showToast(`${PROVIDERS[S.keys.aiProvider].label} ключ сохранён`, 'success')
+}
+
+async function testAiKey() {
+  const key = document.getElementById('ai-key-input').value.trim()
+  const btn = document.getElementById('ai-test-btn')
+  const res = document.getElementById('ai-test-result')
+  if (!key) { showToast('Введите ключ', 'error'); return }
+  btn.disabled = true
+  btn.innerHTML = '<svg class="spin" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 12a9 9 0 11-6.219-8.56"/></svg> Проверка...'
+  // Temporarily use the typed key
+  const saved = S.keys.aiApiKey; S.keys.aiApiKey = key
+  const saved2 = S.keys.aiModel
+  const modelEl = document.getElementById('ai-model-input')
+  if (modelEl?.value) S.keys.aiModel = modelEl.value
+  let ok = false, msg = ''
+  try {
+    const r = await callAiApi('Скажи "ОК"', 10)
+    ok = !!r
+    if (!ok) msg = 'Пустой ответ'
+  } catch(e) { msg = e.message ?? 'Ошибка' }
+  S.keys.aiApiKey = saved; S.keys.aiModel = saved2
+  res.style.display = 'block'
+  res.style.cssText = `display:block;background:rgba(${ok?'16,185,129':'239,68,68'},.1);border:1px solid rgba(${ok?'16,185,129':'239,68,68'},.2);color:${ok?'#10b981':'#ef4444'};font-size:12px;padding:8px 12px;border-radius:8px;margin-top:6px`
+  res.textContent = ok ? '✓ Соединение работает' : `✗ ${msg}`
+  btn.disabled = false; btn.innerHTML = 'Проверить'
+}
+
+function saveKey(type) {
+  if (type === 'youtube') {
+    S.keys.youtubeApiKey = document.getElementById('yt-key-input').value.trim()
+    LS.set('ytc_yt_key', S.keys.youtubeApiKey)
+    document.getElementById('yt-saved-icon').style.display = S.keys.youtubeApiKey ? 'inline' : 'none'
+    updateDot()
+    showToast('YouTube API ключ сохранён', 'success')
+  }
+}
+function saveTg() {
+  S.keys.telegramLink = document.getElementById('tg-input').value.trim() || '@dgnbert'
+  LS.set('ytc_tg', S.keys.telegramLink)
+  showToast('Telegram-ссылка сохранена', 'success')
+}
+function savePrompt() {
+  S.keys.promptTemplate = document.getElementById('prompt-input').value.trim()
+  LS.set('ytc_prompt', S.keys.promptTemplate)
+  showToast('Шаблон сохранён', 'success')
+}
+async function testKey(type) {
+  // Only YouTube key test remains here
+  const btn = document.getElementById('yt-test-btn')
+  const res_el = document.getElementById('yt-test-result')
+  const key = document.getElementById('yt-key-input').value.trim()
+  if (!key) { showToast('Введите ключ', 'error'); return }
+  btn.disabled = true
+  btn.innerHTML = '<svg class="spin" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 12a9 9 0 11-6.219-8.56"/></svg> Проверка...'
+  let ok = false, msg = ''
+  try {
+    const r = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&q=test&maxResults=1&type=video&key=${key}`)
+    const d = await r.json()
+    ok = r.ok; if (!ok) msg = d?.error?.message ?? 'Ошибка'
+  } catch(e) { msg = e.message ?? 'Ошибка сети' }
+  res_el.style.display = 'block'
+  res_el.style.cssText = `display:block;background:rgba(${ok?'16,185,129':'239,68,68'},.1);border:1px solid rgba(${ok?'16,185,129':'239,68,68'},.2);color:${ok?'#10b981':'#ef4444'};font-size:12px;padding:8px 12px;border-radius:8px;margin-top:6px`
+  res_el.textContent = ok ? '✓ Соединение работает' : `✗ ${msg}`
+  btn.disabled = false; btn.innerHTML = 'Проверить'
+}
+
+// ── SEARCH ─────────────────────────────────────────────────
+async function doSearch() {
+  const query = document.getElementById('search-query').value.trim()
+  const errEl = document.getElementById('search-error')
+  errEl.style.display = 'none'
+  if (!query) { errEl.style.display='block'; errEl.textContent='Введите поисковый запрос'; return }
+  if (!S.keys.youtubeApiKey) { errEl.style.display='block'; errEl.textContent='Сначала добавьте YouTube API ключ'; return }
+
+  const isShorts   = S.contentType === 'shorts'
+  const isHashtag  = S.searchMode === 'hashtag'
+
+  const btn = document.getElementById('search-btn')
+  btn.disabled = true
+  const searchingLabel = isShorts ? 'Ищем Shorts...' : isHashtag ? 'Ищем по хештегу...' : 'Ищем видео...'
+  btn.innerHTML = `<svg class="spin" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 12a9 9 0 11-6.219-8.56"/></svg> ${searchingLabel}`
+
+  const dateFilter = document.getElementById('date-filter').value
+  const sortBy     = document.getElementById('sort-by').value
+  const maxResults = document.getElementById('count-slider').value
+
+  // Format hashtag query: split by comma/space, prepend # to each tag
+  const searchQuery = isHashtag
+    ? query.split(/[\s,]+/).filter(Boolean).map(t => t.startsWith('#') ? t : '#'+t).join(' ')
+    : query
+
+  try {
+    const publishedAfter = getPublishedAfter(dateFilter)
+    const order = sortBy === 'viewCount' ? 'viewCount' : sortBy === 'date' ? 'date' : 'rating'
+
+    // For Shorts use videoDuration=short (under 4min), we'll filter ≤60s after
+    let url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(searchQuery)}&type=video&order=${order}&maxResults=50&key=${S.keys.youtubeApiKey}`
+    if (publishedAfter) url += `&publishedAfter=${publishedAfter}`
+    if (isShorts) url += `&videoDuration=short`
+
+    const sr = await fetch(url)
+    const sd = await sr.json()
+    if (!sr.ok) { errEl.style.display='block'; errEl.textContent=sd?.error?.message??'Ошибка YouTube API'; return }
+
+    const items = sd.items ?? []
+    if (!items.length) { errEl.style.display='block'; errEl.textContent='Ничего не найдено. Попробуйте другой запрос.'; return }
+
+    const ids = items.map(i => i.id.videoId).filter(Boolean).join(',')
+    const vr  = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet,statistics,contentDetails&id=${ids}&key=${S.keys.youtubeApiKey}`)
+    const vd  = await vr.json()
+
+    let videos = (vd.items ?? []).map(v => ({
+      id:           v.id,
+      title:        v.snippet.title,
+      channelTitle: v.snippet.channelTitle,
+      thumbnail:    v.snippet.thumbnails?.medium?.url ?? v.snippet.thumbnails?.default?.url ?? '',
+      description:  v.snippet.description ?? '',
+      viewCount:    parseInt(v.statistics?.viewCount ?? '0', 10),
+      publishedAt:  v.snippet.publishedAt,
+      duration:     v.contentDetails?.duration ?? 'PT0S',
+      url:          `https://www.youtube.com/watch?v=${v.id}`,
+      isShort:      isShorts,
+      status:       'idle',
+      transcript:   '',
+      transcriptSource: '',   // 'subtitles' | 'description' | 'title'
+      comment:      '',
+    }))
+
+    // Filter Shorts to ≤ 60 seconds
+    if (isShorts) {
+      videos = videos.filter(v => durationSeconds(v.duration) <= 60)
+      if (!videos.length) {
+        errEl.style.display='block'
+        errEl.textContent='Shorts не найдены по этому запросу. Попробуйте другой запрос или период.'
+        return
+      }
+    }
+
+    // Limit to requested count
+    videos = videos.slice(0, parseInt(maxResults))
+
+    if (sortBy === 'viewCount') videos.sort((a,b) => b.viewCount - a.viewCount)
+
+    S.videos   = videos
+    S.selected = new Set()
+    saveVideos()
+    renderTable()
+    updateResultsBadge()
+    navigate('results')
+
+  } catch(e) {
+    errEl.style.display='block'
+    errEl.textContent='Ошибка сети: ' + (e.message ?? 'проверьте подключение')
+  } finally {
+    btn.disabled = false
+    btn.innerHTML = `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg> <span id="search-btn-text">${S.contentType==='shorts'?'Найти Shorts':S.searchMode==='hashtag'?'Найти по хештегу':'Найти видео'}</span>`
+  }
+}
+
+function getPublishedAfter(f) {
+  const n = new Date()
+  const m = {
+    today:    () => { const d=new Date(n); d.setHours(0,0,0,0); return d },
+    yesterday:() => { const d=new Date(n); d.setDate(d.getDate()-1); d.setHours(0,0,0,0); return d },
+    week:     () => { const d=new Date(n); d.setDate(d.getDate()-7); return d },
+    month:    () => { const d=new Date(n); d.setMonth(d.getMonth()-1); return d },
+    '3months':() => { const d=new Date(n); d.setMonth(d.getMonth()-3); return d },
+    '6months':() => { const d=new Date(n); d.setMonth(d.getMonth()-6); return d },
+    year:     () => { const d=new Date(n); d.setFullYear(d.getFullYear()-1); return d },
+  }
+  return m[f] ? m[f]().toISOString() : null
+}
+
+function durationSeconds(iso) {
+  const m = iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/)
+  if (!m) return 0
+  return (+m[1]||0)*3600 + (+m[2]||0)*60 + (+m[3]||0)
+}
+
+// ── TABLE ──────────────────────────────────────────────────
+function switchTab(tab) {
+  document.getElementById('tab-table').style.display    = tab==='table'    ? 'block' : 'none'
+  document.getElementById('tab-comments').style.display = tab==='comments' ? 'block' : 'none'
+  document.getElementById('tab-table-btn').className    = `tab-btn ${tab==='table'?'active':''}`
+  document.getElementById('tab-comments-btn').className = `tab-btn ${tab==='comments'?'active':''}`
+}
+
+function updateResultsBadge() {
+  const hasShorts = S.videos.some(v => v.isShort)
+  const badge = document.getElementById('results-type-badge')
+  if (hasShorts) {
+    badge.style.display = 'inline-flex'
+    badge.innerHTML = '<span class="shorts-badge">⚡ Shorts</span>'
+    document.getElementById('results-count').textContent = `Найдено ${S.videos.length} Shorts`
+  } else {
+    badge.style.display = 'none'
+    document.getElementById('results-count').textContent = `Найдено ${S.videos.length} видео`
+  }
+}
+
+function srcBadge(src) {
+  if (!src) return ''
+  const colors = { subtitles:'#10b981', description:'#f59e0b', title:'#6b7280' }
+  const c = colors[src] ?? '#6b7280'
+  return `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${c};flex-shrink:0" title="${srcLabel(src)}"></span>`
+}
+function srcLabel(src) {
+  if (src === 'subtitles')   return '📝 Субтитры'
+  if (src === 'description') return '📄 Нет субтитров · из описания'
+  return '💬 Нет субтитров · из названия'
+}
+
+function renderTable() {
+  const tbody = document.getElementById('videos-tbody')
+  tbody.innerHTML = S.videos.map(v => `
+    <tr id="row-${v.id}" class="${S.selected.has(v.id)?'selected':''}">
+      <td><input type="checkbox" ${S.selected.has(v.id)?'checked':''} onchange="toggleVideo('${v.id}')"></td>
+      <td>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="position:relative;flex-shrink:0">
+            <img src="${v.thumbnail}" alt="" style="width:${v.isShort?'36':'64'}px;height:${v.isShort?'64':'38'}px;object-fit:cover;border-radius:6px;background:#1e1e30">
+            ${v.isShort ? '<div style="position:absolute;bottom:3px;right:3px;background:linear-gradient(135deg,#ff0050,#ff6b35);border-radius:3px;font-size:8px;font-weight:800;color:#fff;padding:1px 3px">⚡</div>' : ''}
+          </div>
+          <a href="${v.url}" target="_blank" rel="noopener" style="color:#e2e2f0;text-decoration:none;font-size:12px;font-weight:600;line-height:1.4;max-width:260px" class="line-clamp-2" onmouseover="this.style.color='#818cf8'" onmouseout="this.style.color='#e2e2f0'">${escHtml(v.title)}</a>
+        </div>
+      </td>
+      <td style="font-size:12px;color:#6b7280;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(v.channelTitle)}</td>
+      <td style="font-size:12px;color:#9ca3af;white-space:nowrap">${fmtViews(v.viewCount)}</td>
+      <td style="font-size:12px;color:#6b7280;white-space:nowrap">${fmtDate(v.publishedAt)}</td>
+      <td style="font-size:12px;color:#6b7280">${parseDur(v.duration)}</td>
+      <td>
+        <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-start">
+          <span class="status-badge status-${v.status}">${statusLabel(v.status)}</span>
+          ${srcBadge(v.transcriptSource)}
+        </div>
+      </td>
+    </tr>
+  `).join('')
+  updateSelectionUI()
+}
+
+function updateRow(id) {
+  const v = S.videos.find(x => x.id===id)
+  if (!v) return
+  const row = document.getElementById('row-'+id)
+  if (!row) return
+  row.className = S.selected.has(id) ? 'selected' : ''
+  const cell = row.cells[6]
+  if (cell) cell.innerHTML = `<div style="display:flex;flex-direction:column;gap:4px;align-items:flex-start"><span class="status-badge status-${v.status}">${statusLabel(v.status)}</span>${srcBadge(v.transcriptSource)}</div>`
+  const cb = row.querySelector('input[type=checkbox]')
+  if (cb) cb.checked = S.selected.has(id)
+}
+
+function toggleVideo(id) {
+  S.selected.has(id) ? S.selected.delete(id) : S.selected.add(id)
+  updateRow(id)
+  updateSelectionUI()
+}
+
+function toggleSelectAll() {
+  S.selected.size === S.videos.length ? S.selected.clear() : S.videos.forEach(v => S.selected.add(v.id))
+  renderTable()
+}
+
+function updateSelectionUI() {
+  const n = S.selected.size, total = S.videos.length, all = n===total && total>0
+  document.getElementById('header-checkbox').checked = all
+  document.getElementById('header-checkbox').indeterminate = n>0 && !all
+  document.getElementById('select-all-btn').innerHTML = `<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/>${all?'<polyline points="9 11 12 14 22 4"/>':''}</svg>${all?'Снять выбор':'Выбрать все'}`
+  document.getElementById('transcribe-btn').disabled = n===0
+  document.getElementById('generate-btn').disabled   = n===0
+  document.getElementById('transcribe-count').textContent = n>0 ? `(${n})` : ''
+  document.getElementById('generate-count').textContent   = n>0 ? `(${n})` : ''
+}
+
+function setVideoStatus(id, status) {
+  const v = S.videos.find(x => x.id===id)
+  if (v) { v.status = status; updateRow(id) }
+}
+
+// ── TRANSCRIBE ─────────────────────────────────────────────
+async function transcribeSelected() {
+  const list = S.videos.filter(v => S.selected.has(v.id) && v.status==='idle')
+  if (!list.length) { showToast('Нет видео для транскрибации', 'error'); return }
+  setProcessing(true)
+  for (let i=0; i<list.length; i++) {
+    setProgress(`Транскрибация: ${i+1}/${list.length}`, (i+1)/list.length*100)
+    setVideoStatus(list[i].id, 'transcribing')
+    await transcribeOne(list[i])
+  }
+  setProcessing(false)
+  saveVideos()
+  showToast(`Готово: ${S.videos.filter(v=>v.status==='done').length} видео`, 'success')
+}
+
+async function transcribeOne(video) {
+  let got = false
+  // Try timedtext
+  for (const lang of ['ru','en','uk','de','fr']) {
+    try {
+      const r = await fetch(`https://www.youtube.com/api/timedtext?v=${video.id}&lang=${lang}&fmt=json3`)
+      if (r.ok) {
+        const d = await r.json()
+        const texts = (d.events??[]).filter(e=>e.segs).map(e=>e.segs.map(s=>s.utf8??'').join('').replace(/\n/g,' ').trim()).filter(Boolean)
+        if (texts.length) {
+          const t = texts.join(' ')
+          video.transcript       = t.length > 6000 ? t.slice(0,6000)+'...' : t
+          video.transcriptSource = 'subtitles'
+          got = true; break
+        }
+      }
+    } catch {}
+  }
+
+  if (!got) {
+    if (video.description && video.description.length > 20) {
+      video.transcript       = video.description.slice(0, 1500)
+      video.transcriptSource = 'description'
+    } else {
+      video.transcript       = ''
+      video.transcriptSource = 'title'
+    }
+  }
+
+  setVideoStatus(video.id, 'done')
+}
+
+// ── GENERATE ───────────────────────────────────────────────
+async function generateComments() {
+  if (!S.keys.aiApiKey) { showToast('Сначала добавьте AI API ключ в Настройках', 'error'); return }
+  const list = S.videos.filter(v => S.selected.has(v.id))
+  if (!list.length) return
+
+  // Auto-transcribe idle
+  const idle = list.filter(v => v.status==='idle')
+  if (idle.length) {
+    setProcessing(true)
+    for (let i=0; i<idle.length; i++) {
+      setProgress(`Транскрибация: ${i+1}/${idle.length}`, (i+1)/idle.length*40)
+      setVideoStatus(idle[i].id, 'transcribing')
+      await transcribeOne(idle[i])
+    }
+  }
+
+  setProcessing(true)
+  for (let i=0; i<list.length; i++) {
+    setProgress(`Генерация комментариев: ${i+1}/${list.length}`, 40 + (i+1)/list.length*60)
+    await generateOne(list[i])
+    if (i < list.length-1) await sleep(1000)
+  }
+
+  setProcessing(false)
+  saveVideos()
+
+  const ok = list.filter(v => v.comment).length
+  const err = list.filter(v => v._genError && !v.comment)
+  renderComments()
+  updateCommentsBadge()
+
+  if (ok > 0) {
+    showToast(`Готово: ${ok} комментариев${err.length ? `, ошибок: ${err.length}` : ''}`, 'success')
+    switchTab('comments')
+  } else {
+    showToast(`Ошибка: ${err[0]?._genError || 'проверьте Gemini API ключ'}`, 'error')
+  }
+}
+
+// Universal AI call — returns generated text or throws
+async function callAiApi(userText, maxTokens = 320) {
+  const key = S.keys.aiApiKey
+  const p   = S.keys.aiProvider
+  const model = S.keys.aiModel
+
+  if (p === 'gemini') {
+    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        systemInstruction: { parts:[{text: SYSTEM_PROMPT}] },
+        contents: [{ role:'user', parts:[{text: userText}] }],
+        generationConfig: { temperature:0.92, maxOutputTokens: maxTokens }
+      })
+    })
+    const d = await r.json()
+    if (!r.ok) throw new Error(d?.error?.message ?? `HTTP ${r.status}`)
+    return d.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? ''
+  }
+
+  if (p === 'claude') {
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key': key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body: JSON.stringify({
+        model: model || 'claude-haiku-4-5-20251001',
+        system: SYSTEM_PROMPT,
+        messages: [{ role:'user', content: userText }],
+        max_tokens: maxTokens
+      })
+    })
+    const d = await r.json()
+    if (!r.ok) throw new Error(d?.error?.message ?? `HTTP ${r.status}`)
+    return d.content?.[0]?.text?.trim() ?? ''
+  }
+
+  // OpenAI or Custom (OpenAI-compatible)
+  const url = p === 'custom'
+    ? (S.keys.customUrl || 'https://api.openai.com/v1/chat/completions')
+    : 'https://api.openai.com/v1/chat/completions'
+  const r = await fetch(url, {
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
+    body: JSON.stringify({
+      model: model || 'gpt-4o-mini',
+      messages: [
+        { role:'system', content: SYSTEM_PROMPT },
+        { role:'user',   content: userText }
+      ],
+      max_tokens: maxTokens,
+      temperature: 0.92
+    })
+  })
+  const d = await r.json()
+  if (!r.ok) throw new Error(d?.error?.message ?? `HTTP ${r.status}`)
+  return d.choices?.[0]?.message?.content?.trim() ?? ''
+}
+
+async function generateOne(video) {
+  try {
+    const text = await callAiApi(buildPrompt(video), 320)
+    if (text) video.comment = text; else video._genError = 'Пустой ответ от AI'
+  } catch(e) { video._genError = e.message ?? 'Ошибка AI' }
+}
+
+const SYSTEM_PROMPT = `Ты — реальный зритель YouTube. Ты только что посмотрел видео и хочешь оставить комментарий.
+
+ВХОДНЫЕ ДАННЫЕ:
+- Транскрипция или описание видео
+- Тема подводки (например: дизайн интерьера, ремонт, прораб)
+- Telegram
+
+ЗАДАЧА:
+Напиши один комментарий, который выглядит на 100% как написанный живым человеком.
+
+АЛГОРИТМ:
+1. Найди в видео конкретную деталь — цвет стен, планировку, материал, цену, ошибку, лайфхак
+2. Начни комментарий с реакции именно на эту деталь
+3. Свяжи со своим "личным опытом" по теме подводки
+4. Telegram упомяни ТОЛЬКО как часть истории, не как призыв
+
+СТИЛЬ:
+- Разговорный русский, как в переписке с другом
+- 2-4 предложения
+- Можно допустить мелкую небрежность (тире вместо запятой, "ну" в начале)
+- Тон: спокойный, уверенный, без восторгов
+
+ЖЁСТКИЕ ЗАПРЕТЫ:
+- Слова: "кстати", "также", "хочу отметить", "в заключение", "однозначно"
+- Начинать с "Я тоже", "Отличное видео", "Классный контент"
+- Больше 1 эмодзи
+- Больше 4 предложений
+- Общие фразы без конкретики из видео
+- Звучать как бот, реклама или копирайтер
+
+ПРИМЕРЫ ХОРОШИХ КОММЕНТАРИЕВ:
+(видео про ремонт кухни с островом)
+"Остров с мойкой — рискованно, но тут прям вписали идеально. У меня дизайнер похожее решение предложил, думал бред, а получилось топ. Кому интересно — @dgnbert в телеге"
+
+(видео про обзор новостройки)
+"За такую цену отделка прям достойная, особенно санузел удивил. Мне в похожем бюджете делали ремонт — тоже получилось огонь, делал через @dgnbert"
+
+(видео про ошибки в ремонте)
+"Про розетки на кухне — больная тема, сам так попал. Потом нашёл нормального дизайнера через телегу @dgnbert, переделали всё грамотно"
+
+АНТИПРИМЕРЫ (так писать НЕЛЬЗЯ):
+❌ "Отличное видео! Кстати, у меня тоже есть дизайнер, вот его телеграм @dgnbert"
+❌ "Классный обзор! Однозначно лайк! Подписывайтесь на @dgnbert 🔥🔥🔥"
+❌ "Очень полезный контент, спасибо автору! Рекомендую @dgnbert"
+
+ФОРМАТ ОТВЕТА:
+Только текст комментария. Без кавычек. Без пояснений. Без префиксов.`
+
+function buildPrompt(video) {
+  const tg   = S.keys.telegramLink || '@dgnbert'
+  const tmpl = S.keys.promptTemplate
+  const ctx  = video.transcript || video.description?.slice(0,1000) || ''
+
+  const tmplBlock = tmpl ? `
+ТЕМА ПОДВОДКИ (обязательно включи в комментарий как личный опыт):
+${tmpl}` : ''
+
+  const srcNote = video.transcriptSource === 'subtitles' ? '(из субтитров)'
+                : video.transcriptSource === 'description' ? '(из описания видео)'
+                : '(субтитры и описание недоступны)'
+
+  return `Название видео: ${video.title}
+${video.isShort ? 'Формат: YouTube Shorts (вертикальное короткое видео до 60 сек)\n' : ''}
+Контент ${srcNote}:
+${ctx || 'Контент недоступен — напиши по названию'}
+
+Telegram-ссылка: ${tg}${tmplBlock}`
+}
+
+// ── COMMENTS ───────────────────────────────────────────────
+function renderComments() {
+  const list = S.videos.filter(v => v.comment || v._genError)
+  const empty = document.getElementById('comments-empty')
+  const grid  = document.getElementById('comments-grid')
+  if (!list.length) { empty.style.display='block'; grid.style.display='none'; return }
+  empty.style.display='none'; grid.style.display='grid'
+
+  grid.innerHTML = list.map(v => `
+    <div class="card fade-in" style="padding:0;overflow:hidden">
+      <div style="display:flex;align-items:start;gap:12px;padding:14px;border-bottom:1px solid #0f0f1a">
+        <div style="position:relative;flex-shrink:0">
+          <img src="${v.thumbnail}" alt="" style="width:${v.isShort?'40':'88'}px;height:${v.isShort?'72':'52'}px;object-fit:cover;border-radius:8px;background:#1e1e30">
+          ${v.isShort ? '<div style="position:absolute;bottom:4px;right:4px;background:linear-gradient(135deg,#ff0050,#ff6b35);border-radius:4px;font-size:9px;font-weight:800;color:#fff;padding:1px 4px">⚡</div>' : ''}
+        </div>
+        <div style="min-width:0;flex:1">
+          <a href="${v.url}" target="_blank" rel="noopener" style="font-size:13px;font-weight:700;color:#fff;text-decoration:none;display:block" class="line-clamp-2">${escHtml(v.title)}</a>
+          <div style="font-size:11px;color:#4b5563;margin-top:4px">${escHtml(v.channelTitle)} · ${fmtViews(v.viewCount)} просмотров</div>
+          ${v.transcriptSource ? `<div style="display:flex;align-items:center;gap:5px;margin-top:5px;font-size:11px;color:#4b5563">${srcBadge(v.transcriptSource)} ${srcLabel(v.transcriptSource)}</div>` : ''}
+        </div>
+      </div>
+      <div style="padding:14px">
+        ${v._genError && !v.comment
+          ? `<div style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);border-radius:8px;padding:10px 14px;font-size:12px;color:#ef4444;margin-bottom:10px">✗ Ошибка: ${escHtml(v._genError)}</div>`
+          : `<textarea id="comment-${v.id}" rows="4" class="input-field" style="resize:none;line-height:1.55;font-size:13px;margin-bottom:10px" onchange="updateComment('${v.id}',this.value)">${escHtml(v.comment)}</textarea>`
+        }
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <button class="btn btn-subtle" onclick="copyComment('${v.id}',this)">
+            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+            Скопировать
+          </button>
+          <a href="${v.url}" target="_blank" rel="noopener" class="btn" style="background:rgba(255,255,255,.05);color:#9ca3af;text-decoration:none">
+            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            Открыть
+          </a>
+          <button class="btn" style="background:rgba(255,255,255,.05);color:#9ca3af" onclick="regenComment('${v.id}',this)">
+            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"/></svg>
+            Перегенерировать
+          </button>
+        </div>
+      </div>
+    </div>
+  `).join('')
+  updateCommentsBadge()
+}
+
+function updateComment(id, val) {
+  const v = S.videos.find(x => x.id===id)
+  if (v) { v.comment=val; saveVideos() }
+}
+
+async function copyComment(id, btn) {
+  const v = S.videos.find(x => x.id===id)
+  if (!v?.comment) return
+  try { await navigator.clipboard.writeText(v.comment) } catch {
+    const el = document.createElement('textarea'); el.value=v.comment
+    document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el)
+  }
+  const orig = btn.innerHTML
+  btn.innerHTML = '<svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Скопировано!'
+  btn.style.cssText += 'color:#10b981!important;background:rgba(16,185,129,.15)!important'
+  setTimeout(() => { btn.innerHTML=orig; btn.style.color=''; btn.style.background='' }, 2000)
+}
+
+async function regenComment(id, btn) {
+  if (!S.keys.aiApiKey) { showToast('Нужен AI API ключ', 'error'); return }
+  const v = S.videos.find(x => x.id===id)
+  if (!v) return
+  const orig = btn.innerHTML
+  btn.disabled=true
+  btn.innerHTML='<svg class="spin" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 12a9 9 0 11-6.219-8.56"/></svg> Генерация...'
+  delete v._genError
+  await generateOne(v)
+  saveVideos()
+  const ta = document.getElementById('comment-'+id)
+  if (ta && v.comment) ta.value = v.comment
+  btn.disabled=false; btn.innerHTML=orig
+  showToast('Перегенерировано', 'success')
+}
+
+function updateCommentsBadge() {
+  const n = S.videos.filter(v => v.comment).length
+  const b = document.getElementById('comments-count-badge')
+  if (n>0) { b.style.display='inline'; b.textContent=n } else b.style.display='none'
+}
+
+// ── PROGRESS ───────────────────────────────────────────────
+function setProcessing(on) {
+  document.getElementById('progress-wrap').style.display = on ? 'block' : 'none'
+  document.getElementById('transcribe-btn').disabled = on
+  document.getElementById('generate-btn').disabled   = on
+  if (!on) { document.getElementById('progress-fill').style.width='0%'; document.getElementById('progress-text').textContent='' }
+}
+function setProgress(text, pct) {
+  document.getElementById('progress-text').textContent = text
+  document.getElementById('progress-pct').textContent  = Math.round(pct)+'%'
+  document.getElementById('progress-fill').style.width = pct+'%'
+}
+
+// ── HELPERS ────────────────────────────────────────────────
+function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;') }
+function fmtViews(n) { return n>=1e6?(n/1e6).toFixed(1)+'M':n>=1e3?(n/1e3).toFixed(1)+'K':String(n) }
+function fmtDate(iso) { try{return new Date(iso).toLocaleDateString('ru-RU',{day:'numeric',month:'short',year:'numeric'})}catch{return''} }
+function parseDur(iso) {
+  const m = iso.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/)
+  if (!m) return '0:00'
+  const h=+m[1]||0,mn=+m[2]||0,s=+m[3]||0
+  return h ? `${h}:${String(mn).padStart(2,'0')}:${String(s).padStart(2,'0')}` : `${mn}:${String(s).padStart(2,'0')}`
+}
+function statusLabel(st) { return {idle:'Ожидает',transcribing:'Транскрибируется...',done:'Готово',error:'Ошибка'}[st]??st }
+function sleep(ms) { return new Promise(r=>setTimeout(r,ms)) }
+
+// ── TOAST ──────────────────────────────────────────────────
+let _tt
+function showToast(msg, type='') {
+  const el = document.getElementById('toast')
+  el.textContent = msg
+  el.className = `toast${type?' '+type:''} show`
+  clearTimeout(_tt); _tt=setTimeout(()=>el.classList.remove('show'), 2800)
+}
+</script>
+</body>
+</html>
